@@ -1,3 +1,9 @@
+# Discontinued
+
+I've stopped using Seyfert for [reasons](http://gist.github.com/lunaradev1/6bb5120dad4767c31cb7dcfabfeb1469), so this project is no longer updated. Sorry guys.
+
+---
+
 # Statfert
 
 An implementation of the [Statcord](https://statcord.com) API for [Seyfert](https://seyfert.dev)
