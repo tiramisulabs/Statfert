@@ -1,49 +1,79 @@
----
-
 # Statfert
 
-An implementation of the [Statcord](https://statcord.com) API for [Seyfert](https://seyfert.dev)
+An implementation of the [Statcord](https://statcord.com) API for
+[Seyfert](https://seyfert.dev).
 
 ## Installation
 
-### npm
-
 ```bash
-npm install ~
+npm install statfert
 ```
 
-### bun
+Statfert requires Seyfert 5 or newer.
 
-```bash
-bun install ~
-```
+## Usage
 
-## Basic Usage
-
-Usage of this package will involve deciding whether you want to use shards or not. If your `seyfert.config.mjs` (or similar) exports `config.bot`, you probably want
-`ShardedStatfert`, otherwise you want `Statfert`.
-
-**This example will use `ShardedStatfert`. It's the most likely option for Seyfert users.**
+Create the plugin once, register its tuple in `SeyfertRegistry`, and pass it to
+the client. Gateway and worker clients send the first payload once they are
+ready; other clients start during plugin setup. Statfert continues on the
+configured interval and stops automatically when `client.close()` runs.
 
 ```typescript
-import { Client } from 'seyfert'
-import { ShardedStatfert, StatfertPostable } from 'statfert'
+import { Client, definePlugins } from 'seyfert'
+import { statfert } from 'statfert'
 
-const client = new Client()
-const statfert = new ShardedStatfert(client, '[YOUR STATCORD API KEY]')
+export const plugins = definePlugins(
+  statfert({ apiKey: process.env.STATCORD_API_KEY ?? '' })
+)
 
-client.start().then(async () => {
-    await statfert.start() // Automatically sends guild count once every minute.
+declare module 'seyfert' {
+  interface SeyfertRegistry {
+    plugins: typeof plugins
+  }
+}
 
-    // You can also send whatever you want.
-    // await statfert.start([StatfertPostable.CpuUsage, StatfertPostable.GuildCount]) // Automatically sends CPU usage and guild count once every minute.
+const client = new Client({ plugins })
+await client.start()
+```
 
-    // And also change the interval.
-    // await statfert.start([StatfertPostable.GuildCount], 180) // Automatically sends guild count once every 3 minutes.
+The plugin exposes the same service as `client.statfert` and `ctx.statfert`.
+Command usage is tracked automatically through Seyfert's command observer.
+
+```typescript
+await client.statfert.sendStats()
+client.statfert.createCustomGraph({
+  id: 'daily-growth',
+  data: { users: 42 },
 })
 ```
 
-## Still to come
+## Options
 
-- Custom graphs (gotta work on making those work)
-- Top commands (using the actual commands on the client)
+```typescript
+import { StatfertPostable, statfert } from 'statfert'
+
+statfert({
+  apiKey: process.env.STATCORD_API_KEY ?? '',
+  postables: [
+    StatfertPostable.GuildCount,
+    StatfertPostable.ShardCount,
+    StatfertPostable.CpuUsage,
+  ],
+  timeBetweenRequests: 180,
+})
+```
+
+- `apiKey` is required.
+- `postables` defaults to guild count.
+- `timeBetweenRequests` is measured in seconds, defaults to `60`, and cannot be
+  lower than `60` or higher than `2147483.647`.
+
+The plugin resolves shard count from gateway and worker clients without any
+manual client setup.
+
+`GuildCount` and `Members` require Seyfert's guild cache. Statfert reads the
+configured cache adapter directly and never falls back to the Discord REST API.
+
+Worker mode runs one autopost loop on the manager-selected worker. It omits
+`UserCount` and automatic top-command data because those values are
+process-local; guild and member totals follow the configured cache adapter.
