@@ -3,7 +3,8 @@
     // Environment setup & latest features
     "lib": ["ESNext"],
     "target": "ESNext",
-    "module": "Preserve",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "moduleDetection": "force",
     "jsx": "react-jsx",
     "allowJs": true,
@@ -21,15 +22,11 @@
     "noPropertyAccessFromIndexSignature": true,
 
     // Extra build flags
-    "baseUrl": ".",
+    "rootDir": "src",
     "outDir": "dist/",
     "removeComments": true,
     "declaration": true,
-    "importHelpers": true,
-
-    // Needed for tests
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "importHelpers": true
   },
-  "exclude": ["dist/*", "tests/*", "xo.config.ts", "seyfert.config.mjs"]
+  "exclude": ["dist/*", "tests/*", "xo.config.ts"]
 }
